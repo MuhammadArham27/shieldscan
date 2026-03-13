@@ -1,13 +1,16 @@
 """
 ShieldScan — Flask Backend
 Provides: Auth, URL scanning, and Groq AI chatbot proxy
+Uses JSON file storage so data persists across server restarts.
 """
 
 import os
 import re
+import json
 import time
 import hashlib
 import ipaddress
+from pathlib import Path
 from urllib.parse import urlparse
 from functools import wraps
 
@@ -19,7 +22,7 @@ from groq import Groq
 app = Flask(__name__, static_folder=".", static_url_path="")
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+groq_client  = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 SYSTEM_PROMPT = """You are ShieldBot, an AI security assistant embedded in ShieldScan — a URL threat analysis platform.
 
@@ -34,9 +37,20 @@ Format responses with clear structure using short paragraphs.
 If a user pastes a URL, analyze it for red flags and explain your reasoning.
 Always recommend caution and safe browsing habits."""
 
-_users: dict[str, dict] = {}
-_sessions: dict[str, str] = {}
-_scan_history: dict[str, list] = {}
+# ─── JSON file-based storage (persists across restarts) ───────────────────────
+
+DATA_FILE = Path("data.json")
+
+def _load() -> dict:
+    if DATA_FILE.exists():
+        try:
+            return json.loads(DATA_FILE.read_text())
+        except Exception:
+            pass
+    return {"users": {}, "sessions": {}, "history": {}}
+
+def _save(db: dict):
+    DATA_FILE.write_text(json.dumps(db, indent=2))
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,9 +65,10 @@ def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        if token not in _sessions:
+        db = _load()
+        if token not in db["sessions"]:
             return jsonify({"error": "Unauthorized"}), 401
-        request.user_email = _sessions[token]
+        request.user_email = db["sessions"][token]
         return f(*args, **kwargs)
     return decorated
 
@@ -84,7 +99,7 @@ SUSPICIOUS_PATH_WORDS = {
 
 
 def analyze_url(raw_url: str) -> dict:
-    checks = []
+    checks     = []
     risk_score = 0
 
     url = raw_url.strip()
@@ -97,7 +112,7 @@ def analyze_url(raw_url: str) -> dict:
         return {"error": "Invalid URL"}
 
     hostname = parsed.hostname or ""
-    path = parsed.path or ""
+    path     = parsed.path or ""
 
     # 1. HTTPS
     is_https = parsed.scheme == "https"
@@ -118,7 +133,7 @@ def analyze_url(raw_url: str) -> dict:
     if is_ip: risk_score += 25
 
     # 3. Risky TLD
-    tld = "." + hostname.rsplit(".", 1)[-1] if "." in hostname else ""
+    tld     = "." + hostname.rsplit(".", 1)[-1] if "." in hostname else ""
     bad_tld = tld.lower() in RISKY_TLDS
     checks.append({"name": "TLD Reputation", "icon": "🌐", "pass": not bad_tld,
         "detail": f"TLD '{tld}' is commonly used in attacks" if bad_tld else f"TLD '{tld}' appears reputable",
@@ -127,14 +142,14 @@ def analyze_url(raw_url: str) -> dict:
 
     # 4. Phishing keywords
     domain_lower = hostname.lower()
-    found_kw = [kw for kw in PHISHING_KEYWORDS if kw in domain_lower]
+    found_kw     = [kw for kw in PHISHING_KEYWORDS if kw in domain_lower]
     checks.append({"name": "Phishing Keywords", "icon": "🎣", "pass": len(found_kw) == 0,
         "detail": f"Suspicious keywords found: {', '.join(found_kw)}" if found_kw else "No phishing keywords detected in domain",
         "severity": "high"})
     if found_kw: risk_score += min(10 * len(found_kw), 30)
 
     # 5. URL shortener
-    apex = ".".join(hostname.split(".")[-2:]) if hostname.count(".") >= 1 else hostname
+    apex     = ".".join(hostname.split(".")[-2:]) if hostname.count(".") >= 1 else hostname
     is_short = apex in SHORTENER_DOMAINS
     checks.append({"name": "URL Shortener", "icon": "✂️", "pass": not is_short,
         "detail": f"Short URL service ({apex}) — destination is hidden" if is_short else "Not a URL shortener",
@@ -142,9 +157,9 @@ def analyze_url(raw_url: str) -> dict:
     if is_short: risk_score += 15
 
     # 6. Subdomain depth
-    parts = hostname.split(".")
+    parts          = hostname.split(".")
     subdomain_count = max(0, len(parts) - 2)
-    deep = subdomain_count > 2
+    deep           = subdomain_count > 2
     checks.append({"name": "Subdomain Depth", "icon": "🧩", "pass": not deep,
         "detail": f"{subdomain_count} subdomain levels — unusually deep" if deep else f"{subdomain_count} subdomain levels — normal",
         "severity": "medium"})
@@ -158,7 +173,7 @@ def analyze_url(raw_url: str) -> dict:
     if has_puny: risk_score += 30
 
     # 8. URL length
-    url_len = len(url)
+    url_len  = len(url)
     too_long = url_len > 100
     checks.append({"name": "URL Length", "icon": "📏", "pass": not too_long,
         "detail": f"URL length {url_len} chars — abnormally long" if too_long else f"URL length {url_len} chars — acceptable",
@@ -174,7 +189,7 @@ def analyze_url(raw_url: str) -> dict:
 
     # 10. Path keywords
     path_lower = path.lower()
-    path_hits = [w for w in SUSPICIOUS_PATH_WORDS if w in path_lower]
+    path_hits  = [w for w in SUSPICIOUS_PATH_WORDS if w in path_lower]
     checks.append({"name": "Path Keywords", "icon": "📁", "pass": len(path_hits) == 0,
         "detail": f"Suspicious path words: {', '.join(path_hits)}" if path_hits else "Path looks clean",
         "severity": "low"})
@@ -211,13 +226,17 @@ def signup():
         return jsonify({"error": "Invalid email address"}), 400
     if len(pw) < 8:
         return jsonify({"error": "Password must be at least 8 characters"}), 400
-    if email in _users:
+
+    db = _load()
+    if email in db["users"]:
         return jsonify({"error": "An account with that email already exists"}), 409
 
-    _users[email] = {"name": name, "email": email, "pw_hash": _hash_pw(pw)}
-    _scan_history[email] = []
-    token = _make_token(email)
-    _sessions[token] = email
+    db["users"][email]   = {"name": name, "email": email, "pw_hash": _hash_pw(pw)}
+    db["history"][email] = []
+    token                = _make_token(email)
+    db["sessions"][token] = email
+    _save(db)
+
     return jsonify({"token": token, "name": name, "email": email}), 201
 
 
@@ -227,12 +246,14 @@ def login():
     email = (data.get("email") or "").strip().lower()
     pw    = data.get("password") or ""
 
-    user = _users.get(email)
+    db   = _load()
+    user = db["users"].get(email)
     if not user or user["pw_hash"] != _hash_pw(pw):
         return jsonify({"error": "Invalid email or password"}), 401
 
     token = _make_token(email)
-    _sessions[token] = email
+    db["sessions"][token] = email
+    _save(db)
     return jsonify({"token": token, "name": user["name"], "email": email})
 
 
@@ -240,7 +261,9 @@ def login():
 @require_auth
 def logout():
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    _sessions.pop(token, None)
+    db    = _load()
+    db["sessions"].pop(token, None)
+    _save(db)
     return jsonify({"ok": True})
 
 
@@ -258,28 +281,29 @@ def scan():
     if "error" in result:
         return jsonify(result), 400
 
+    db    = _load()
     email = request.user_email
-    _scan_history.setdefault(email, []).insert(0, result)
-    _scan_history[email] = _scan_history[email][:50]
+    db["history"].setdefault(email, []).insert(0, result)
+    db["history"][email] = db["history"][email][:50]
+    _save(db)
     return jsonify(result)
 
 
 @app.route("/api/scan/history", methods=["GET"])
 @require_auth
 def scan_history():
+    db    = _load()
     email = request.user_email
-    return jsonify(_scan_history.get(email, []))
+    return jsonify(db["history"].get(email, []))
 
 
-# ─── Chatbot route (Groq — free & fast) ───────────────────────────────────────
+# ─── Chatbot route ─────────────────────────────────────────────────────────────
 
 @app.route("/api/chat", methods=["POST"])
 @require_auth
 def chat():
     if not groq_client:
-        return jsonify({
-            "error": "Groq API key not configured. Set GROQ_API_KEY environment variable."
-        }), 503
+        return jsonify({"error": "Groq API key not configured. Set GROQ_API_KEY environment variable."}), 503
 
     data     = request.get_json() or {}
     messages = data.get("messages", [])
@@ -298,8 +322,7 @@ def chat():
             max_tokens=1024,
             temperature=0.7,
         )
-        reply = response.choices[0].message.content
-        return jsonify({"reply": reply})
+        return jsonify({"reply": response.choices[0].message.content})
 
     except Exception as e:
         error_msg = str(e)
@@ -314,7 +337,7 @@ def chat():
 
 @app.route("/")
 def root():
-    return send_from_directory(".", "index.html")
+    return send_from_directory(".", "home.html")
 
 @app.route("/<path:filename>")
 def static_files(filename):
@@ -322,4 +345,4 @@ def static_files(filename):
 
 
 if __name__ == "__main__":
-    app.run()
+     app.run()

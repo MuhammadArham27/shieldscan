@@ -56,7 +56,7 @@ const Auth = {
 
   requireAuth() {
     if (!this.isLoggedIn()) {
-      window.location.href = "login.html";
+      window.location.href = "index.html";
       return false;
     }
     return true;
@@ -65,7 +65,7 @@ const Auth = {
   async logout() {
     try { await API.post("/api/auth/logout"); } catch (_) {}
     this.clear();
-    window.location.href = "login.html";
+    window.location.href = "index.html";
   },
 };
 
@@ -104,7 +104,7 @@ function showToast(msg, type = "info") {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Pages that require login (all except auth pages)
-  const publicPages = ["index.html", "signup.html", "home.html", ""];
+  const publicPages = ["index.html", "signup.html", "home.html", "login.html", ""];
   const currentPage = window.location.pathname.split("/").pop();
   if (!publicPages.includes(currentPage)) {
     if (!Auth.requireAuth()) return;
