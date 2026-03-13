@@ -5,4 +5,4 @@ scikit-learn
 joblib
 google-generativeai
 gunicorn
-grod
+groq
