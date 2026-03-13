@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShieldScan — URL Safety Analyzer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- ════════ NAVBAR ════════ -->
+<nav class="home-nav">
+  <div class="brand-icon">🛡</div>
+  <div class="brand-name">Shield<em style="color:var(--accent);font-style:normal">Scan</em></div>
+
+  <div class="nav-actions" id="navActions">
+    <a href="login.html" class="btn-nav-login">Sign In</a>
+    <a href="signup.html" class="btn-nav-cta">Get Started Free →</a>
+  </div>
+</nav>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-orb orb-1"></div>
+  <div class="hero-orb orb-2"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="eyebrow-dot"></div>
+      Real-time URL Threat Detection
+    </div>
+
+    <h1 class="hero-title">
+      Is that link<br>
+      <span class="title-accent">actually safe</span><br>
+      to click?
+    </h1>
+
+    <p class="hero-desc">
+      ShieldScan analyzes any URL in milliseconds — scanning for phishing, malware, spoofed domains, suspicious redirects, and 10+ threat indicators before you visit.
+    </p>
+
+    <div class="hero-actions" id="heroActions">
+      <a href="signup.html" class="btn-hero-primary">
+        🛡 Start Scanning Free
+      </a>
+      <a href="#about" class="btn-hero-secondary">
+        Learn How It Works ↓
+      </a>
+    </div>
+  </div>
+
+  <!-- Mock demo card -->
+  <div class="hero-demo">
+    <div class="demo-card">
+      <div class="demo-bar">
+        <div class="demo-dot d1"></div>
+        <div class="demo-dot d2"></div>
+        <div class="demo-dot d3"></div>
+      </div>
+      <div class="demo-url-row">
+        🔍
+        <span>https://paypal-secure-verify.tk/login?ref=update&user=you@email.com</span>
+      </div>
+      <div class="demo-result-row">
+        <div class="demo-score">18</div>
+        <div>
+          <div class="demo-verdict">🚫 DANGEROUS — Do Not Visit</div>
+          <div class="demo-sub">Suspicious TLD · Phishing keywords · Excessive query params · No HTTPS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ ABOUT / DESCRIPTION ════════ -->
+<section class="about-section" id="about">
+  <div class="about-inner">
+
+    <!-- Visual -->
+    <div class="about-visual reveal">
+      <div class="shield-rings">
+        <div class="shield-ring ring-1"></div>
+        <div class="shield-ring ring-2"></div>
+        <div class="shield-ring ring-3"></div>
+        <div class="shield-center">🛡</div>
+      </div>
+
+      <div class="about-stats-row">
+        <div class="a-stat">
+          <div class="a-stat-val">10+</div>
+          <div class="a-stat-lbl">Threat Checks</div>
+        </div>
+        <div class="a-stat">
+          <div class="a-stat-val">&lt;1s</div>
+          <div class="a-stat-lbl">Scan Speed</div>
+        </div>
+        <div class="a-stat">
+          <div class="a-stat-val">100%</div>
+          <div class="a-stat-lbl">Free to Use</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Text -->
+    <div class="reveal reveal-d2">
+      <div class="section-label">What is ShieldScan</div>
+      <h2 class="section-title">Your personal<br><em>URL safety analyzer</em></h2>
+      <p class="section-body">
+        ShieldScan is a free, AI-enhanced URL security tool that helps individuals, businesses, and security teams verify whether any web link is safe before clicking. Paste any URL — from emails, messages, social media, or ads — and get an instant threat verdict backed by a 10-point analysis engine.
+      </p>
+      <p class="section-body" style="margin-top:1rem;">
+        Unlike basic link checkers, ShieldScan examines the full anatomy of a URL: the protocol, domain reputation, subdomain depth, TLD risk, phishing keywords, punycode spoofing, query string complexity, and more — then scores it from 0–100 with a clear Safe / Suspicious / Dangerous verdict.
+      </p>
+
+      <div class="how-it-works" style="margin-top:2rem;">
+        <div class="how-step">
+          <div class="step-num">01</div>
+          <div class="step-text">
+            <h4>Paste any URL</h4>
+            <p>Copy a link from an email, message, social post, or anywhere else and paste it into ShieldScan.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">02</div>
+          <div class="step-text">
+            <h4>10-point deep analysis</h4>
+            <p>Our engine inspects HTTPS, domain cleanliness, TLD risk, phishing keywords, IP abuse, and more.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">03</div>
+          <div class="step-text">
+            <h4>Instant safety verdict</h4>
+            <p>Receive a 0–100 safety score with a color-coded verdict and detailed check-by-check breakdown.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">04</div>
+          <div class="step-text">
+            <h4>Ask ShieldBot for help</h4>
+            <p>Use our AI chatbot to ask follow-up questions, get threat explanations, or analyze suspicious patterns.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════ USES WITH IMAGES ════════ -->
+<section class="uses-section" id="uses">
+  <div class="uses-inner">
+    <div class="section-center reveal">
+      <div class="section-label">Use Cases</div>
+      <h2 class="section-title">Where <em>ShieldScan</em> protects you</h2>
+      <p class="section-body">
+        Whether you're an everyday internet user or a security professional, ShieldScan keeps you safe across every digital touchpoint where malicious links appear.
+      </p>
+    </div>
+
+    <div class="uses-grid">
+
+      <!-- 1. Email Phishing -->
+      <div class="use-card reveal reveal-d1">
+        <div class="use-img-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=600&q=75&fit=crop"
+            alt="Email phishing protection"
+            loading="lazy"
+          >
+          <div class="use-img-overlay"></div>
+          <div class="use-img-tag" style="background:rgba(255,61,107,0.75);color:#fff;">⚠ High Risk</div>
+        </div>
+        <div class="use-card-body">
+          <div class="use-card-title">📧 Email Phishing Links</div>
+          <div class="use-card-desc">
+            Phishing emails disguise malicious URLs as legitimate services — banks, PayPal, Amazon. Before clicking any link in an email, paste it into ShieldScan to verify it's not spoofed or harvesting your credentials.
+          </div>
+          <div class="use-card-tags">
+            <span class="use-tag">Phishing</span>
+            <span class="use-tag">Credential Theft</span>
+            <span class="use-tag">Spoofed Domains</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Social Media -->
+      <div class="use-card reveal reveal-d2">
+        <div class="use-img-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&q=75&fit=crop"
+            alt="Social media link safety"
+            loading="lazy"
+          >
+          <div class="use-img-overlay"></div>
+          <div class="use-img-tag" style="background:rgba(255,171,0,0.75);color:#000;">⚡ Common</div>
+        </div>
+        <div class="use-card-body">
+          <div class="use-card-title">📱 Social Media & DMs</div>
+          <div class="use-card-desc">
+            Scammers flood social platforms with shortened and obfuscated URLs in comments, DMs, and posts. ShieldScan expands and analyzes these links to reveal their true destination and threat level.
+          </div>
+          <div class="use-card-tags">
+            <span class="use-tag">URL Shorteners</span>
+            <span class="use-tag">Scam Links</span>
+            <span class="use-tag">Redirects</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Online Shopping -->
+      <div class="use-card reveal reveal-d3">
+        <div class="use-img-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=600&q=75&fit=crop"
+            alt="E-commerce security"
+            loading="lazy"
+          >
+          <div class="use-img-overlay"></div>
+          <div class="use-img-tag" style="background:rgba(0,200,255,0.7);color:#000;">🛒 Shopping</div>
+        </div>
+        <div class="use-card-body">
+          <div class="use-card-title">🛍 Fake Shopping Sites</div>
+          <div class="use-card-desc">
+            Counterfeit storefronts mimic real retailers to steal payment details. ShieldScan detects typosquatted domains, lookalike brand names, and missing security indicators before you enter any card details.
+          </div>
+          <div class="use-card-tags">
+            <span class="use-tag">Typosquatting</span>
+            <span class="use-tag">Card Skimming</span>
+            <span class="use-tag">Fake Stores</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Corporate / IT Security -->
+      <div class="use-card reveal reveal-d1">
+        <div class="use-img-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&q=75&fit=crop"
+            alt="Corporate cybersecurity"
+            loading="lazy"
+          >
+          <div class="use-img-overlay"></div>
+          <div class="use-img-tag" style="background:rgba(0,255,157,0.65);color:#000;">🏢 Enterprise</div>
+        </div>
+        <div class="use-card-body">
+          <div class="use-card-title">🏢 Corporate IT Security</div>
+          <div class="use-card-desc">
+            Security teams use ShieldScan to quickly triage suspicious URLs reported by employees, audit inbound link campaigns, and educate staff on recognizing threat patterns without needing specialized tooling.
+          </div>
+          <div class="use-card-tags">
+            <span class="use-tag">Threat Triage</span>
+            <span class="use-tag">Security Audits</span>
+            <span class="use-tag">Employee Training</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. SMS / Smishing -->
+      <div class="use-card reveal reveal-d2">
+        <div class="use-img-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=75&fit=crop"
+            alt="SMS smishing protection"
+            loading="lazy"
+          >
+          <div class="use-img-overlay"></div>
+          <div class="use-img-tag" style="background:rgba(255,61,107,0.7);color:#fff;">📲 Smishing</div>
+        </div>
+        <div class="use-card-body">
+          <div class="use-card-title">📲 SMS Smishing Attacks</div>
+          <div class="use-card-desc">
+            "Your package couldn't be delivered — click here." Smishing texts deliver malicious links via SMS. ShieldScan catches suspicious domains, fake delivery trackers, and prize scam URLs before they cause damage.
+          </div>
+          <div class="use-card-tags">
+            <span class="use-tag">Smishing</span>
+            <span class="use-tag">Fake Delivery</span>
+            <span class="use-tag">Prize Scams</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. AI Chatbot -->
+      <div class="use-card reveal reveal-d3">
+        <div class="use-img-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600&q=75&fit=crop"
+            alt="AI security assistant"
+            loading="lazy"
+          >
+          <div class="use-img-overlay"></div>
+          <div class="use-img-tag" style="background:rgba(0,200,255,0.7);color:#000;">🤖 AI-Powered</div>
+        </div>
+        <div class="use-card-body">
+          <div class="use-card-title">🤖 AI Security Education</div>
+          <div class="use-card-desc">
+            Not sure why a URL is risky? Ask ShieldBot — our Claude-powered AI assistant that explains threats, teaches phishing detection, and answers any cybersecurity question in plain language, on demand.
+          </div>
+          <div class="use-card-tags">
+            <span class="use-tag">AI Chatbot</span>
+            <span class="use-tag">Threat Explanation</span>
+            <span class="use-tag">Security Q&A</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ THREAT TYPES ════════ -->
+<section class="threats-section">
+  <div class="threats-inner">
+    <div class="section-center reveal">
+      <div class="section-label">Threat Intelligence</div>
+      <h2 class="section-title">What we <em>detect</em></h2>
+      <p class="section-body">ShieldScan's analysis engine is built to catch the most common and dangerous URL-based attack vectors used against everyday users.</p>
+    </div>
+
+    <div class="threats-grid">
+      <div class="threat-card reveal reveal-d1" style="--tc:var(--red)">
+        <span class="threat-emoji">🎣</span>
+        <div class="threat-name">Phishing</div>
+        <div class="threat-desc">URLs mimicking legitimate services to steal usernames, passwords, and payment data.</div>
+      </div>
+      <div class="threat-card reveal reveal-d2" style="--tc:var(--amber)">
+        <span class="threat-emoji">🦠</span>
+        <div class="threat-name">Malware Delivery</div>
+        <div class="threat-desc">Links that silently download malicious software, ransomware, or exploit kits to your device.</div>
+      </div>
+      <div class="threat-card reveal reveal-d3" style="--tc:var(--accent)">
+        <span class="threat-emoji">🎭</span>
+        <div class="threat-name">Homograph Attacks</div>
+        <div class="threat-desc">Unicode lookalike characters used to create undetectable spoofed domains (e.g. аpple.com).</div>
+      </div>
+      <div class="threat-card reveal reveal-d4" style="--tc:var(--green)">
+        <span class="threat-emoji">✂️</span>
+        <div class="threat-name">Shortened URLs</div>
+        <div class="threat-desc">URL shorteners that hide the true destination — commonly used to bypass security filters.</div>
+      </div>
+      <div class="threat-card reveal reveal-d1" style="--tc:var(--red)">
+        <span class="threat-emoji">⌨️</span>
+        <div class="threat-name">Typosquatting</div>
+        <div class="threat-desc">Domains with deliberate misspellings of trusted brands to catch mistyped addresses.</div>
+      </div>
+      <div class="threat-card reveal reveal-d2" style="--tc:var(--amber)">
+        <span class="threat-emoji">🔄</span>
+        <div class="threat-name">Redirect Chains</div>
+        <div class="threat-desc">Multi-hop redirects through seemingly safe domains to reach malicious final destinations.</div>
+      </div>
+      <div class="threat-card reveal reveal-d3" style="--tc:var(--accent)">
+        <span class="threat-emoji">🔢</span>
+        <div class="threat-name">IP-Based URLs</div>
+        <div class="threat-desc">Raw IP addresses used instead of domain names — a classic indicator of no legitimate hosting.</div>
+      </div>
+      <div class="threat-card reveal reveal-d4" style="--tc:var(--green)">
+        <span class="threat-emoji">🌐</span>
+        <div class="threat-name">Risky TLDs</div>
+        <div class="threat-desc">Top-level domains like .xyz, .tk, .ml, and .pw are disproportionately used in scam campaigns.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ CTA SECTION ════════ -->
+<section class="cta-section">
+  <div class="cta-inner reveal">
+    <h2 class="cta-title">Think before you click.<br><em>Scan before you visit.</em></h2>
+    <p class="cta-sub">
+      It takes 30 seconds to create your free account and start scanning links. Your safety — and your team's — is worth it.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;" id="ctaActions">
+      <a href="signup.html" class="btn-hero-primary" style="font-size:1rem;padding:1rem 2.4rem;">
+        🛡 Create Free Account
+      </a>
+      <a href="login.html" class="btn-hero-secondary" style="font-size:1rem;padding:1rem 2rem;">
+        Sign In →
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ FOOTER ════════ -->
+<footer class="home-footer">
+  <a href="home.html" class="footer-brand">
+    <div class="brand-icon" style="width:26px;height:26px;font-size:0.85rem;box-shadow:none;">🛡</div>
+    Shield<span style="color:var(--accent)">Scan</span>
+  </a>
+
+  <div class="footer-links">
+    <a href="#about">About</a>
+    <a href="#uses">Use Cases</a>
+    <a href="login.html">Sign In</a>
+    <a href="signup.html">Sign Up</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="chatbot.html">AI Chatbot</a>
+  </div>
+
+  <div class="footer-copy">© 2025 ShieldScan · Built with Claude AI</div>
+</footer>
+
+<script src="js/app.js"></script>
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── Auth-aware navbar & CTAs ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.isLoggedIn()) {
+    const name = Auth.getName();
+    const initial = name.charAt(0).toUpperCase();
+
+    // ── Navbar: replace Sign In / Get Started with avatar + Dashboard + Logout
+    const navActions = document.getElementById('navActions');
+    if (navActions) {
+      navActions.innerHTML = `
+        <span class="nav-user-badge">
+          <span class="nav-avatar">${initial}</span>
+          <span class="nav-user-name">${name}</span>
+        </span>
+        <a href="dashboard.html" class="btn-nav-login">Dashboard</a>
+        <button class="btn-nav-cta" id="homeLogoutBtn">Sign Out</button>
+      `;
+      document.getElementById('homeLogoutBtn').addEventListener('click', () => Auth.logout());
+    }
+
+    // ── Hero CTA: replace "Start Scanning Free" with Go to Dashboard
+    const heroActions = document.getElementById('heroActions');
+    if (heroActions) {
+      heroActions.innerHTML = `
+        <a href="scanner.html" class="btn-hero-primary">🛡 Scan a URL Now</a>
+        <a href="dashboard.html" class="btn-hero-secondary">Go to Dashboard →</a>
+      `;
+    }
+
+    // ── Bottom CTA: replace signup/signin with dashboard/scan
+    const ctaActions = document.getElementById('ctaActions');
+    if (ctaActions) {
+      ctaActions.innerHTML = `
+        <a href="scanner.html" class="btn-hero-primary" style="font-size:1rem;padding:1rem 2.4rem;">🛡 Scan a URL Now</a>
+        <a href="dashboard.html" class="btn-hero-secondary" style="font-size:1rem;padding:1rem 2rem;">Go to Dashboard →</a>
+      `;
+    }
+  }
+});
+</script>
+</body>
+</html>

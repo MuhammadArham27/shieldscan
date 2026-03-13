@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShieldScan — AI Chatbot</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <a href="dashboard.html" class="nav-brand">
+    <div class="brand-icon">🛡</div>
+    <div class="brand-name">Shield<em>Scan</em></div>
+  </a>
+
+  <div class="nav-links">
+    <a href="home.html" class="nav-link" data-page="home">
+      <span class="nav-icon">🏠</span> Home
+    </a>
+    <a href="dashboard.html" class="nav-link" data-page="dashboard">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a href="scanner.html" class="nav-link" data-page="scanner">
+      <span class="nav-icon">🔍</span> URL Scanner
+    </a>
+    <a href="chatbot.html" class="nav-link" data-page="chatbot">
+      <span class="nav-icon">🤖</span> AI Chatbot
+    </a>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-user">
+      <div class="avatar" id="navAvatar">U</div>
+      <span class="nav-username" id="navUsername">user</span>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<!-- ── CONTENT ── -->
+<div class="page-wrapper">
+
+  <div class="page-header anim-fade-up">
+    <h1>AI Security Assistant</h1>
+    <p>// ask <span>ShieldBot</span> anything about URL safety, threats &amp; cybersecurity</p>
+  </div>
+
+  <div class="chatbot-layout anim-fade-up anim-delay-1">
+
+    <!-- ─── Sidebar ─── -->
+    <aside class="chat-sidebar">
+
+      <div class="sidebar-section-label">Quick Questions</div>
+
+      <button class="suggestion-btn" data-prompt="Is https://bit.ly/3xK9mPQ safe to visit?">
+        <span class="s-icon">🔗</span>
+        <span class="s-text">Is this short URL safe?</span>
+      </button>
+
+      <button class="suggestion-btn" data-prompt="What are the top signs that a URL is a phishing attempt?">
+        <span class="s-icon">🎣</span>
+        <span class="s-text">Signs of phishing URLs</span>
+      </button>
+
+      <button class="suggestion-btn" data-prompt="How does a homograph attack work and how can I detect it?">
+        <span class="s-icon">🎭</span>
+        <span class="s-text">Homograph attacks explained</span>
+      </button>
+
+      <button class="suggestion-btn" data-prompt="Why should I be careful with URL shorteners like bit.ly and tinyurl?">
+        <span class="s-icon">✂️</span>
+        <span class="s-text">URL shortener risks</span>
+      </button>
+
+      <button class="suggestion-btn" data-prompt="What does HTTPS actually protect me from?">
+        <span class="s-icon">🔒</span>
+        <span class="s-text">What HTTPS protects</span>
+      </button>
+
+      <button class="suggestion-btn" data-prompt="How can I check if a website is legitimate before entering my details?">
+        <span class="s-icon">🕵️</span>
+        <span class="s-text">How to verify a website</span>
+      </button>
+
+      <button class="suggestion-btn" data-prompt="What makes a domain name suspicious?">
+        <span class="s-icon">🌐</span>
+        <span class="s-text">Suspicious domain patterns</span>
+      </button>
+
+      <button class="suggestion-btn" data-prompt="What is typosquatting and how do attackers use it?">
+        <span class="s-icon">⌨️</span>
+        <span class="s-text">Typosquatting explained</span>
+      </button>
+
+      <div class="chat-info-card">
+        <div class="ci-title">ℹ️ About ShieldBot</div>
+        ShieldBot is powered by Claude AI. It specializes in cybersecurity, URL threat analysis, and safe browsing guidance. Paste any URL for an AI-assisted review.
+      </div>
+
+    </aside>
+
+    <!-- ─── Main chat ─── -->
+    <div class="chat-main">
+
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="bot-avatar">🤖</div>
+        <div class="bot-meta">
+          <h3>ShieldBot</h3>
+          <div class="bot-status">
+            <div class="status-dot"></div>
+            Online — AI Security Assistant
+          </div>
+        </div>
+        <div class="chat-actions">
+          <button class="btn-clear" id="clearBtn">Clear Chat</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <!-- Input area -->
+      <div class="chat-input-area">
+        <div class="chat-input-wrap">
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            rows="1"
+            placeholder="Ask about URL safety, paste a link to analyze, or ask anything cybersecurity..."
+          ></textarea>
+          <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+        </div>
+        <button class="btn-send" id="sendBtn" title="Send message">➤</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

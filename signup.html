@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShieldScan — Create Account</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-body">
+<div class="scanlines"></div>
+
+<div class="auth-split anim-fade-up">
+
+  <!-- Left branding panel -->
+  <div class="auth-panel">
+    <div class="auth-panel-brand">
+      <div class="brand-icon">🛡</div>
+      <div class="brand-name">Shield<em>Scan</em></div>
+    </div>
+
+    <div class="auth-panel-hero">
+      <h2>Your personal URL safety analyzer.</h2>
+      <p>Join ShieldScan and start checking links for threats, phishing attempts, and suspicious patterns instantly.</p>
+    </div>
+
+    <div class="auth-panel-features">
+      <div class="auth-feature">
+        <div class="auth-feature-dot"></div>
+        <span>Free to use, no credit card</span>
+      </div>
+      <div class="auth-feature">
+        <div class="auth-feature-dot"></div>
+        <span>Scan unlimited URLs</span>
+      </div>
+      <div class="auth-feature">
+        <div class="auth-feature-dot"></div>
+        <span>AI chatbot for security Q&A</span>
+      </div>
+      <div class="auth-feature">
+        <div class="auth-feature-dot"></div>
+        <span>Persistent scan history</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="auth-form-panel">
+    <div class="auth-form-header">
+      <h2>Create account</h2>
+      <p>// set up your <span>ShieldScan</span> profile</p>
+    </div>
+
+    <div class="auth-error" id="signupError"></div>
+
+    <form id="signupForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="signupName">Full Name</label>
+        <input
+          type="text"
+          id="signupName"
+          class="form-input"
+          placeholder="Alex Johnson"
+          autocomplete="name"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="signupEmail">Email Address</label>
+        <input
+          type="email"
+          id="signupEmail"
+          class="form-input"
+          placeholder="you@example.com"
+          autocomplete="email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="signupPass">Password</label>
+        <input
+          type="password"
+          id="signupPass"
+          class="form-input"
+          placeholder="Min 8 characters"
+          autocomplete="new-password"
+        >
+        <div class="pw-strength" style="margin-top:0.5rem;">
+          <div class="pw-bar" id="pwBar1"></div>
+          <div class="pw-bar" id="pwBar2"></div>
+          <div class="pw-bar" id="pwBar3"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full" style="margin-top:0.5rem;">
+        Create Account →
+      </button>
+    </form>
+
+    <p class="auth-switch-text" style="margin-top:1.5rem;">
+      Already have an account?
+      <a href="index.html">Sign in</a>
+    </p>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

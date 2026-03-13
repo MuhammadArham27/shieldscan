@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShieldScan — Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <a href="dashboard.html" class="nav-brand">
+    <div class="brand-icon">🛡</div>
+    <div class="brand-name">Shield<em>Scan</em></div>
+  </a>
+
+  <div class="nav-links">
+    <a href="home.html" class="nav-link" data-page="home">
+      <span class="nav-icon">🏠</span> Home
+    </a>
+    <a href="dashboard.html" class="nav-link" data-page="dashboard">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a href="scanner.html" class="nav-link" data-page="scanner">
+      <span class="nav-icon">🔍</span> URL Scanner
+    </a>
+    <a href="chatbot.html" class="nav-link" data-page="chatbot">
+      <span class="nav-icon">🤖</span> AI Chatbot
+    </a>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-user">
+      <div class="avatar" id="navAvatar">U</div>
+      <span class="nav-username" id="navUsername">user</span>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<!-- ── CONTENT ── -->
+<div class="page-wrapper">
+
+  <div class="page-header anim-fade-up">
+    <h1>Security Dashboard</h1>
+    <p>// overview of your <span>URL scanning</span> activity</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card anim-fade-up anim-delay-1">
+      <div class="stat-glyph">🔗</div>
+      <div class="stat-label">Total Scanned</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-sub">URLs analyzed</div>
+    </div>
+    <div class="stat-card stat-safe anim-fade-up anim-delay-2">
+      <div class="stat-glyph">✅</div>
+      <div class="stat-label">Safe URLs</div>
+      <div class="stat-value" id="statSafe">0</div>
+      <div class="stat-sub">Passed all checks</div>
+    </div>
+    <div class="stat-card stat-warn anim-fade-up anim-delay-3">
+      <div class="stat-glyph">⚠️</div>
+      <div class="stat-label">Suspicious</div>
+      <div class="stat-value" id="statWarn">0</div>
+      <div class="stat-sub">Needs caution</div>
+    </div>
+    <div class="stat-card stat-danger anim-fade-up anim-delay-4">
+      <div class="stat-glyph">🚫</div>
+      <div class="stat-label">Dangerous</div>
+      <div class="stat-value" id="statDanger">0</div>
+      <div class="stat-sub">High-risk URLs</div>
+    </div>
+  </div>
+
+  <!-- Quick Scan -->
+  <div class="checker-card anim-fade-up anim-delay-3">
+    <div class="checker-head">
+      <div>
+        <div class="checker-title">Quick URL Scan</div>
+        <div class="checker-sub">// paste any URL — get a <span>safety verdict</span> in seconds</div>
+      </div>
+      <a href="scanner.html" class="btn btn-outline" style="font-size:0.78rem;padding:0.45rem 1rem;">Deep Scan →</a>
+    </div>
+
+    <div class="url-row">
+      <input
+        type="text"
+        id="quickInput"
+        class="url-field"
+        placeholder="https://suspicious-looking-link.xyz/verify-account"
+      >
+      <button class="btn-scan" id="quickScanBtn">
+        <span id="quickBtnLabel">Scan</span>
+        <div class="spinner" id="quickSpinner"></div>
+      </button>
+    </div>
+
+    <div class="result-wrap" id="quickResult"></div>
+  </div>
+
+  <!-- History -->
+  <div class="section-head anim-fade-up anim-delay-4">
+    <h2>Recent Scans</h2>
+  </div>
+
+  <table class="history-table anim-fade-up anim-delay-5">
+    <thead>
+      <tr>
+        <th>URL</th>
+        <th>Status</th>
+        <th>Score</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody id="histBody">
+      <tr><td colspan="4">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          No scans yet — paste a URL above to get started
+        </div>
+      </td></tr>
+    </tbody>
+  </table>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/chatbot-widget.js"></script>
+</body>
+</html>
