@@ -40,16 +40,20 @@ Always recommend caution and safe browsing habits."""
 
 # ─── MongoDB setup ─────────────────────────────────────────────────────────────
 
-MONGO_URI = os.environ.get(
-    "MONGO_URI",
-    "mongodb+srv://muhammadarhamwaqarahmed27_db_user:O4gIYLQwvXBBvtJv@cluster0.fn6yejk.mongodb.net/shieldscan?appName=Cluster0"
-)
+MONGO_URI = "mongodb+srv://muhammadarhamwaqarahmed27_db_user:FmYZvmoRRc3Sc2aw@cluster0.fn6yejk.mongodb.net/shieldscan?appName=Cluster0"
 
-mongo_client = MongoClient(MONGO_URI)
-mdb          = mongo_client["shieldscan"]
-users_col    = mdb["users"]
-sessions_col = mdb["sessions"]
-history_col  = mdb["history"]
+try:
+    mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    mongo_client.admin.command('ping')
+    print("✅ MongoDB connected successfully!")
+    mdb          = mongo_client["shieldscan"]
+    users_col    = mdb["users"]
+    sessions_col = mdb["sessions"]
+    history_col  = mdb["history"]
+except Exception as e:
+    print(f"❌ MongoDB connection FAILED: {e}")
+    mongo_client = None
+    mdb = users_col = sessions_col = history_col = None
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -63,6 +67,8 @@ def _hash_pw(pw: str) -> str:
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if sessions_col is None:
+            return jsonify({"error": "Database not connected"}), 503
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         session = sessions_col.find_one({"token": token})
         if not session:
@@ -214,6 +220,9 @@ def analyze_url(raw_url: str) -> dict:
 
 @app.route("/api/auth/signup", methods=["POST"])
 def signup():
+    if users_col is None:
+        return jsonify({"error": "Database not connected. Check MONGO_URI."}), 503
+
     data  = request.get_json() or {}
     name  = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip().lower()
@@ -225,28 +234,40 @@ def signup():
         return jsonify({"error": "Invalid email address"}), 400
     if len(pw) < 8:
         return jsonify({"error": "Password must be at least 8 characters"}), 400
-    if users_col.find_one({"email": email}):
-        return jsonify({"error": "An account with that email already exists"}), 409
 
-    users_col.insert_one({"name": name, "email": email, "pw_hash": _hash_pw(pw)})
-    token = _make_token(email)
-    sessions_col.insert_one({"token": token, "email": email})
-    return jsonify({"token": token, "name": name, "email": email}), 201
+    try:
+        if users_col.find_one({"email": email}):
+            return jsonify({"error": "An account with that email already exists"}), 409
+
+        users_col.insert_one({"name": name, "email": email, "pw_hash": _hash_pw(pw)})
+        token = _make_token(email)
+        sessions_col.insert_one({"token": token, "email": email})
+        return jsonify({"token": token, "name": name, "email": email}), 201
+    except Exception as e:
+        print(f"Signup error: {e}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
+    if users_col is None:
+        return jsonify({"error": "Database not connected. Check MONGO_URI."}), 503
+
     data  = request.get_json() or {}
     email = (data.get("email") or "").strip().lower()
     pw    = data.get("password") or ""
 
-    user = users_col.find_one({"email": email})
-    if not user or user["pw_hash"] != _hash_pw(pw):
-        return jsonify({"error": "Invalid email or password"}), 401
+    try:
+        user = users_col.find_one({"email": email})
+        if not user or user["pw_hash"] != _hash_pw(pw):
+            return jsonify({"error": "Invalid email or password"}), 401
 
-    token = _make_token(email)
-    sessions_col.insert_one({"token": token, "email": email})
-    return jsonify({"token": token, "name": user["name"], "email": email})
+        token = _make_token(email)
+        sessions_col.insert_one({"token": token, "email": email})
+        return jsonify({"token": token, "name": user["name"], "email": email})
+    except Exception as e:
+        print(f"Login error: {e}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 
 @app.route("/api/auth/logout", methods=["POST"])
@@ -271,13 +292,16 @@ def scan():
     if "error" in result:
         return jsonify(result), 400
 
-    email = request.user_email
-    rec   = history_col.find_one({"email": email})
-    if rec:
-        scans = [result] + rec.get("scans", [])
-        history_col.update_one({"email": email}, {"$set": {"scans": scans[:50]}})
-    else:
-        history_col.insert_one({"email": email, "scans": [result]})
+    try:
+        email = request.user_email
+        rec   = history_col.find_one({"email": email})
+        if rec:
+            scans = [result] + rec.get("scans", [])
+            history_col.update_one({"email": email}, {"$set": {"scans": scans[:50]}})
+        else:
+            history_col.insert_one({"email": email, "scans": [result]})
+    except Exception as e:
+        print(f"History save error: {e}")
 
     return jsonify(result)
 
@@ -285,9 +309,13 @@ def scan():
 @app.route("/api/scan/history", methods=["GET"])
 @require_auth
 def scan_history():
-    email = request.user_email
-    rec   = history_col.find_one({"email": email})
-    return jsonify(rec["scans"] if rec else [])
+    try:
+        email = request.user_email
+        rec   = history_col.find_one({"email": email})
+        return jsonify(rec["scans"] if rec else [])
+    except Exception as e:
+        print(f"History fetch error: {e}")
+        return jsonify([])
 
 
 # ─── Chatbot route ─────────────────────────────────────────────────────────────
@@ -326,6 +354,14 @@ def chat():
         return jsonify({"error": f"API error: {error_msg}"}), 500
 
 
+# ─── Health check ──────────────────────────────────────────────────────────────
+
+@app.route("/api/health")
+def health():
+    db_status = "connected" if users_col is not None else "disconnected"
+    return jsonify({"status": "ok", "database": db_status})
+
+
 # ─── Static pages ──────────────────────────────────────────────────────────────
 
 @app.route("/")
@@ -338,4 +374,5 @@ def static_files(filename):
 
 
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
