@@ -6,3 +6,4 @@ joblib
 google-generativeai
 gunicorn
 groq
+pymongo
