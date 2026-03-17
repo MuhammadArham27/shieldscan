@@ -7,3 +7,4 @@ google-generativeai
 gunicorn
 groq
 pymongo
+psycopg2-binary
