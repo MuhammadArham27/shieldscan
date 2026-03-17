@@ -1,25 +1,26 @@
 """
 ShieldScan — Flask Backend
 Provides: Auth, URL scanning, and Groq AI chatbot proxy
-Uses JSON file storage so data persists across server restarts.
+Uses MongoDB Atlas for persistent storage across restarts.
 """
 
 import os
 import re
-import json
 import time
 import hashlib
 import ipaddress
-from pathlib import Path
 from urllib.parse import urlparse
 from functools import wraps
 
 from flask import Flask, request, jsonify, send_from_directory
 from groq import Groq
+from pymongo import MongoClient
 
 # ─── App setup ────────────────────────────────────────────────────────────────
 
 app = Flask(__name__, static_folder=".", static_url_path="")
+
+# ─── Groq AI ──────────────────────────────────────────────────────────────────
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 groq_client  = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
@@ -37,20 +38,18 @@ Format responses with clear structure using short paragraphs.
 If a user pastes a URL, analyze it for red flags and explain your reasoning.
 Always recommend caution and safe browsing habits."""
 
-# ─── JSON file-based storage (persists across restarts) ───────────────────────
+# ─── MongoDB setup ─────────────────────────────────────────────────────────────
 
-DATA_FILE = Path("data.json")
+MONGO_URI = os.environ.get(
+    "MONGO_URI",
+    "mongodb+srv://muhammadarhamwaqarahmed27_db_user:O4gIYLQwvXBBvtJv@cluster0.fn6yejk.mongodb.net/shieldscan?appName=Cluster0"
+)
 
-def _load() -> dict:
-    if DATA_FILE.exists():
-        try:
-            return json.loads(DATA_FILE.read_text())
-        except Exception:
-            pass
-    return {"users": {}, "sessions": {}, "history": {}}
-
-def _save(db: dict):
-    DATA_FILE.write_text(json.dumps(db, indent=2))
+mongo_client = MongoClient(MONGO_URI)
+mdb          = mongo_client["shieldscan"]
+users_col    = mdb["users"]
+sessions_col = mdb["sessions"]
+history_col  = mdb["history"]
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,10 +64,10 @@ def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        db = _load()
-        if token not in db["sessions"]:
+        session = sessions_col.find_one({"token": token})
+        if not session:
             return jsonify({"error": "Unauthorized"}), 401
-        request.user_email = db["sessions"][token]
+        request.user_email = session["email"]
         return f(*args, **kwargs)
     return decorated
 
@@ -128,7 +127,7 @@ def analyze_url(raw_url: str) -> dict:
     except ValueError:
         pass
     checks.append({"name": "IP Address Check", "icon": "🔢", "pass": not is_ip,
-        "detail": "Uses a proper domain name" if not is_ip else f"Raw IP address ({hostname}) — avoids DNS traceability",
+        "detail": "Uses a proper domain name" if not is_ip else f"Raw IP ({hostname}) — avoids DNS traceability",
         "severity": "high"})
     if is_ip: risk_score += 25
 
@@ -144,7 +143,7 @@ def analyze_url(raw_url: str) -> dict:
     domain_lower = hostname.lower()
     found_kw     = [kw for kw in PHISHING_KEYWORDS if kw in domain_lower]
     checks.append({"name": "Phishing Keywords", "icon": "🎣", "pass": len(found_kw) == 0,
-        "detail": f"Suspicious keywords found: {', '.join(found_kw)}" if found_kw else "No phishing keywords detected in domain",
+        "detail": f"Suspicious keywords: {', '.join(found_kw)}" if found_kw else "No phishing keywords detected",
         "severity": "high"})
     if found_kw: risk_score += min(10 * len(found_kw), 30)
 
@@ -152,23 +151,23 @@ def analyze_url(raw_url: str) -> dict:
     apex     = ".".join(hostname.split(".")[-2:]) if hostname.count(".") >= 1 else hostname
     is_short = apex in SHORTENER_DOMAINS
     checks.append({"name": "URL Shortener", "icon": "✂️", "pass": not is_short,
-        "detail": f"Short URL service ({apex}) — destination is hidden" if is_short else "Not a URL shortener",
+        "detail": f"Short URL ({apex}) — destination hidden" if is_short else "Not a URL shortener",
         "severity": "medium"})
     if is_short: risk_score += 15
 
     # 6. Subdomain depth
-    parts          = hostname.split(".")
+    parts           = hostname.split(".")
     subdomain_count = max(0, len(parts) - 2)
-    deep           = subdomain_count > 2
+    deep            = subdomain_count > 2
     checks.append({"name": "Subdomain Depth", "icon": "🧩", "pass": not deep,
-        "detail": f"{subdomain_count} subdomain levels — unusually deep" if deep else f"{subdomain_count} subdomain levels — normal",
+        "detail": f"{subdomain_count} subdomain levels — unusually deep" if deep else f"{subdomain_count} levels — normal",
         "severity": "medium"})
     if deep: risk_score += 10 * (subdomain_count - 2)
 
     # 7. Punycode
     has_puny = "xn--" in hostname.lower()
     checks.append({"name": "Punycode / Homograph", "icon": "🎭", "pass": not has_puny,
-        "detail": "Punycode encoding detected — possible lookalike domain" if has_puny else "No punycode encoding found",
+        "detail": "Punycode detected — possible lookalike domain" if has_puny else "No punycode encoding found",
         "severity": "high"})
     if has_puny: risk_score += 30
 
@@ -176,14 +175,14 @@ def analyze_url(raw_url: str) -> dict:
     url_len  = len(url)
     too_long = url_len > 100
     checks.append({"name": "URL Length", "icon": "📏", "pass": not too_long,
-        "detail": f"URL length {url_len} chars — abnormally long" if too_long else f"URL length {url_len} chars — acceptable",
+        "detail": f"URL length {url_len} chars — abnormally long" if too_long else f"Length {url_len} — acceptable",
         "severity": "low"})
     if too_long: risk_score += min((url_len - 100) // 20 * 5, 15)
 
     # 9. Special chars
     has_special = bool(re.search(r"[^a-zA-Z0-9.\-]", hostname))
     checks.append({"name": "Special Characters", "icon": "⚠️", "pass": not has_special,
-        "detail": "Unusual characters found in domain" if has_special else "Domain uses standard characters only",
+        "detail": "Unusual characters in domain" if has_special else "Standard characters only",
         "severity": "medium"})
     if has_special: risk_score += 20
 
@@ -199,7 +198,7 @@ def analyze_url(raw_url: str) -> dict:
     if score >= 75:
         verdict, verdict_label, verdict_msg = "safe", "Safe", "No significant threats detected."
     elif score >= 45:
-        verdict, verdict_label, verdict_msg = "warning", "Suspicious", "Proceed with caution — several risk signals found."
+        verdict, verdict_label, verdict_msg = "warning", "Suspicious", "Proceed with caution."
     else:
         verdict, verdict_label, verdict_msg = "danger", "Dangerous", "High risk — do not visit this URL."
 
@@ -226,17 +225,12 @@ def signup():
         return jsonify({"error": "Invalid email address"}), 400
     if len(pw) < 8:
         return jsonify({"error": "Password must be at least 8 characters"}), 400
-
-    db = _load()
-    if email in db["users"]:
+    if users_col.find_one({"email": email}):
         return jsonify({"error": "An account with that email already exists"}), 409
 
-    db["users"][email]   = {"name": name, "email": email, "pw_hash": _hash_pw(pw)}
-    db["history"][email] = []
-    token                = _make_token(email)
-    db["sessions"][token] = email
-    _save(db)
-
+    users_col.insert_one({"name": name, "email": email, "pw_hash": _hash_pw(pw)})
+    token = _make_token(email)
+    sessions_col.insert_one({"token": token, "email": email})
     return jsonify({"token": token, "name": name, "email": email}), 201
 
 
@@ -246,14 +240,12 @@ def login():
     email = (data.get("email") or "").strip().lower()
     pw    = data.get("password") or ""
 
-    db   = _load()
-    user = db["users"].get(email)
+    user = users_col.find_one({"email": email})
     if not user or user["pw_hash"] != _hash_pw(pw):
         return jsonify({"error": "Invalid email or password"}), 401
 
     token = _make_token(email)
-    db["sessions"][token] = email
-    _save(db)
+    sessions_col.insert_one({"token": token, "email": email})
     return jsonify({"token": token, "name": user["name"], "email": email})
 
 
@@ -261,9 +253,7 @@ def login():
 @require_auth
 def logout():
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    db    = _load()
-    db["sessions"].pop(token, None)
-    _save(db)
+    sessions_col.delete_one({"token": token})
     return jsonify({"ok": True})
 
 
@@ -281,20 +271,23 @@ def scan():
     if "error" in result:
         return jsonify(result), 400
 
-    db    = _load()
     email = request.user_email
-    db["history"].setdefault(email, []).insert(0, result)
-    db["history"][email] = db["history"][email][:50]
-    _save(db)
+    rec   = history_col.find_one({"email": email})
+    if rec:
+        scans = [result] + rec.get("scans", [])
+        history_col.update_one({"email": email}, {"$set": {"scans": scans[:50]}})
+    else:
+        history_col.insert_one({"email": email, "scans": [result]})
+
     return jsonify(result)
 
 
 @app.route("/api/scan/history", methods=["GET"])
 @require_auth
 def scan_history():
-    db    = _load()
     email = request.user_email
-    return jsonify(db["history"].get(email, []))
+    rec   = history_col.find_one({"email": email})
+    return jsonify(rec["scans"] if rec else [])
 
 
 # ─── Chatbot route ─────────────────────────────────────────────────────────────
@@ -303,7 +296,7 @@ def scan_history():
 @require_auth
 def chat():
     if not groq_client:
-        return jsonify({"error": "Groq API key not configured. Set GROQ_API_KEY environment variable."}), 503
+        return jsonify({"error": "Groq API key not configured."}), 503
 
     data     = request.get_json() or {}
     messages = data.get("messages", [])
@@ -345,4 +338,4 @@ def static_files(filename):
 
 
 if __name__ == "__main__":
-     app.run()
+    app.run()
