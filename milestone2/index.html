@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PhishGuard // CYBER THREAT DETECTION</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #020408;
+  --bg2:     #060c14;
+  --cyan:    #00ffe7;
+  --magenta: #ff007f;
+  --yellow:  #ffe600;
+  --green:   #00ff41;
+  --red:     #ff2a2a;
+  --dim:     #0a1628;
+  --border:  #0d2440;
+  --text:    #b8d4f0;
+  --muted:   #2a4a6a;
+  --mono:    'Share Tech Mono', monospace;
+  --display: 'Orbitron', sans-serif;
+  --vt:      'VT323', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*{cursor:crosshair}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden;position:relative}
+
+/* scanlines */
+body::before{content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);animation:scanroll 8s linear infinite}
+@keyframes scanroll{0%{background-position:0 0}100%{background-position:0 100px}}
+
+/* hex grid */
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V16L28 0l28 16v34L28 66zm0-2l26-15V18L28 2 2 18v30L28 64z' fill='none' stroke='%230d2440' stroke-width='1'/%3E%3C/svg%3E");opacity:.6}
+
+@keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}20%,24%,55%{opacity:.94}}
+
+.glitch{position:relative;animation:flicker 4s infinite}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0;width:100%}
+.glitch::before{color:var(--magenta);clip-path:polygon(0 0,100% 0,100% 40%,0 40%);animation:glitch1 3s infinite;opacity:.7}
+.glitch::after{color:var(--cyan);clip-path:polygon(0 60%,100% 60%,100% 100%,0 100%);animation:glitch2 3s infinite;opacity:.7}
+@keyframes glitch1{0%,90%,100%{transform:translate(0)}91%{transform:translate(-3px,1px)}93%{transform:translate(3px,-1px)}95%{transform:translate(-2px,2px)}}
+@keyframes glitch2{0%,85%,100%{transform:translate(0)}86%{transform:translate(3px,2px)}88%{transform:translate(-3px,-1px)}90%{transform:translate(2px,-2px)}}
+
+.glow-c{text-shadow:0 0 8px var(--cyan),0 0 20px var(--cyan),0 0 40px var(--cyan)}
+.glow-m{text-shadow:0 0 8px var(--magenta),0 0 20px var(--magenta)}
+.glow-g{text-shadow:0 0 8px var(--green),0 0 20px var(--green)}
+.glow-y{text-shadow:0 0 8px var(--yellow),0 0 20px var(--yellow)}
+.glow-r{text-shadow:0 0 8px var(--red),0 0 20px var(--red)}
+
+/* boot */
+#boot{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:opacity .5s}
+#boot.hidden{opacity:0;pointer-events:none}
+.boot-line{font-family:var(--vt);font-size:18px;color:var(--green);opacity:0;animation:bootfade .1s forwards;text-shadow:0 0 6px var(--green);width:min(620px,90vw)}
+@keyframes bootfade{to{opacity:1}}
+
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 24px 80px}
+
+/* header */
+header{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:40px;position:relative}
+header::after{content:'';position:absolute;bottom:-1px;left:0;width:200px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent);box-shadow:0 0 10px var(--cyan)}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.logo-title{font-family:var(--display);font-size:clamp(20px,4vw,34px);font-weight:900;letter-spacing:4px;color:var(--cyan);text-transform:uppercase}
+.logo-sub{font-family:var(--vt);font-size:18px;color:var(--muted);letter-spacing:3px;margin-top:4px}
+.logo-sub span{color:var(--magenta)}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.system-time{font-family:var(--display);font-size:11px;color:var(--muted);letter-spacing:2px}
+.threat-level{display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:11px;letter-spacing:2px}
+.threat-bar{display:flex;gap:3px}
+.threat-seg{width:14px;height:6px;border-radius:2px;background:var(--border)}
+.threat-seg.on-g{background:var(--green);box-shadow:0 0 6px var(--green)}
+.threat-seg.on-y{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.threat-seg.on-r{background:var(--red);box-shadow:0 0 6px var(--red)}
+
+/* stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:16px 20px;position:relative;overflow:hidden;transition:border-color .2s}
+.stat-card:hover{border-color:var(--cyan)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.stat-label{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.stat-value{font-family:var(--display);font-size:30px;font-weight:900;line-height:1}
+.stat-delta{font-size:10px;color:var(--muted);margin-top:6px}
+.corner{position:absolute;width:8px;height:8px}
+.corner.tl{top:4px;left:4px;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+.corner.tr{top:4px;right:4px;border-top:1px solid var(--cyan);border-right:1px solid var(--cyan)}
+.corner.bl{bottom:4px;left:4px;border-bottom:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+.corner.br{bottom:4px;right:4px;border-bottom:1px solid var(--cyan);border-right:1px solid var(--cyan)}
+
+/* tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:32px}
+.tab{padding:12px 22px;font-family:var(--display);font-size:11px;letter-spacing:2px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:crosshair;transition:all .2s;text-transform:uppercase}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);text-shadow:0 0 10px var(--cyan)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* panel */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;position:relative;overflow:hidden;margin-bottom:20px}
+.panel::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+.panel-head{padding:14px 20px 14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-family:var(--display);font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase}
+.panel-tag{font-size:10px;color:var(--muted);border:1px solid var(--border);padding:2px 8px;border-radius:2px;letter-spacing:1px}
+.panel-body{padding:24px}
+
+/* input */
+.url-row{display:flex;gap:10px}
+.url-input{flex:1;background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:13px 18px;color:var(--cyan);font-family:var(--mono);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;letter-spacing:1px}
+.url-input::placeholder{color:var(--muted)}
+.url-input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,255,231,.1),inset 0 0 12px rgba(0,255,231,.04)}
+.scan-btn{background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:3px;padding:13px 26px;font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;transition:all .2s;white-space:nowrap;position:relative;overflow:hidden}
+.scan-btn::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:scaleX(0);transform-origin:left;transition:transform .2s;z-index:0}
+.scan-btn:hover::before{transform:scaleX(1)}
+.scan-btn:hover{color:#000;box-shadow:0 0 20px rgba(0,255,231,.4)}
+.scan-btn span{position:relative;z-index:1}
+.scan-btn:disabled{opacity:.3}
+.sec-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:3px;padding:8px 16px;font-family:var(--display);font-size:10px;letter-spacing:2px;transition:all .2s}
+.sec-btn:hover{border-color:var(--magenta);color:var(--magenta)}
+.btn-row{display:flex;gap:10px;margin-top:14px}
+
+/* progress */
+.scan-progress{display:none;align-items:center;gap:12px;margin-top:10px}
+.scan-progress.show{display:flex}
+.prog-track{flex:1;height:2px;background:var(--border);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 8px var(--cyan);transition:width .1s;border-radius:99px}
+.prog-label{font-family:var(--vt);font-size:16px;color:var(--cyan);letter-spacing:1px;min-width:220px}
+
+/* result */
+.result-wrap{margin-top:20px;display:none;animation:fadeup .3s ease}
+.result-wrap.show{display:block}
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.verdict-bar{display:flex;align-items:stretch;gap:16px;margin-bottom:16px}
+.verdict-box{flex:0 0 160px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden}
+.verdict-box.phishing{background:rgba(255,0,127,.07);border:1px solid rgba(255,0,127,.4)}
+.verdict-box.phishing::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(255,0,127,.03) 8px,rgba(255,0,127,.03) 9px)}
+.verdict-box.legit{background:rgba(0,255,65,.06);border:1px solid rgba(0,255,65,.3)}
+.verdict-icon{font-size:40px;margin-bottom:8px}
+.verdict-label{font-family:var(--display);font-size:12px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+.result-meta{flex:1;display:flex;flex-direction:column;gap:8px}
+.meta-row{display:flex;align-items:center;justify-content:space-between;background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:10px 14px;gap:10px}
+.meta-key{font-size:10px;color:var(--muted);letter-spacing:1px;white-space:nowrap}
+.meta-val{font-size:13px;color:var(--text);word-break:break-all;text-align:right;flex:1}
+.conf-label-row{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px}
+.conf-track{height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+.conf-fill{height:100%;width:0%;border-radius:99px;transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+.conf-fill.phishing{background:linear-gradient(90deg,var(--magenta),var(--red));box-shadow:0 0 10px var(--magenta)}
+.conf-fill.legit{background:linear-gradient(90deg,var(--cyan),var(--green));box-shadow:0 0 10px var(--cyan)}
+
+/* features */
+.features-title{font-family:var(--display);font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:20px 0 10px}
+.features-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.feat-chip{background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:8px 6px;text-align:center;transition:border-color .2s}
+.feat-chip:hover{border-color:var(--cyan)}
+.feat-name{font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:4px}
+.feat-val{font-family:var(--display);font-size:14px;font-weight:700;color:var(--cyan)}
+.feat-val.alert{color:var(--magenta)}
+
+/* risk bars */
+.risk-grid{display:grid;gap:10px;margin-top:16px}
+.risk-row{display:grid;grid-template-columns:130px 1fr 36px;align-items:center;gap:10px}
+.risk-name{font-size:11px;color:var(--muted)}
+.risk-track{height:4px;background:var(--border);border-radius:99px;overflow:hidden}
+.risk-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 6px var(--cyan);transition:width 1s cubic-bezier(.16,1,.3,1)}
+.risk-score{font-size:11px;color:var(--cyan);text-align:right}
+
+/* batch */
+.batch-area{width:100%;background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:14px;color:var(--cyan);font-family:var(--mono);font-size:13px;outline:none;resize:vertical;min-height:120px;letter-spacing:.5px;transition:border-color .2s}
+.batch-area::placeholder{color:var(--muted)}
+.batch-area:focus{border-color:var(--cyan)}
+.batch-results{margin-top:16px;display:none}
+.batch-results.show{display:block}
+
+/* table */
+.tbl-wrap{overflow:hidden;border-radius:4px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead tr{background:rgba(0,255,231,.03)}
+th{padding:10px 14px;text-align:left;font-family:var(--display);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+td{padding:11px 14px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.02);color:var(--muted);font-family:var(--mono)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(0,255,231,.02)}
+.td-url{color:var(--text);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-block;padding:3px 10px;border-radius:2px;font-family:var(--display);font-size:9px;letter-spacing:1.5px}
+.badge.phishing{background:rgba(255,0,127,.12);color:var(--magenta);border:1px solid rgba(255,0,127,.3)}
+.badge.legit{background:rgba(0,255,65,.08);color:var(--green);border:1px solid rgba(0,255,65,.25)}
+.del-btn{background:none;border:none;color:var(--muted);font-size:14px;border-radius:3px;padding:3px 7px;transition:all .15s}
+.del-btn:hover{color:var(--red);background:rgba(255,42,42,.1)}
+
+/* threat feed */
+.feed-list{display:flex;flex-direction:column;gap:8px}
+.feed-item{display:flex;align-items:center;gap:12px;background:var(--dim);border:1px solid var(--border);border-left:2px solid var(--magenta);border-radius:3px;padding:10px 14px;animation:slideright .3s ease}
+@keyframes slideright{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.feed-icon{font-size:18px}
+.feed-url{font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed-time{font-size:10px;color:var(--muted);white-space:nowrap}
+
+/* toast */
+#toast{position:fixed;bottom:28px;right:28px;z-index:9997;background:var(--bg2);border:1px solid var(--cyan);color:var(--cyan);padding:12px 20px;border-radius:3px;font-size:12px;letter-spacing:1px;box-shadow:0 0 20px rgba(0,255,231,.2);transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.16,1,.3,1);pointer-events:none;font-family:var(--display)}
+#toast.show{transform:translateY(0);opacity:1}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:12px;letter-spacing:1px}
+.loader-dot{display:inline-block;animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .features-grid{grid-template-columns:repeat(4,1fr)}
+  .verdict-bar{flex-direction:column}
+  .verdict-box{flex:none}
+  .url-row{flex-direction:column}
+  .header-top{flex-direction:column;gap:12px;align-items:flex-start}
+  .tabs{overflow-x:auto}
+  .tab{padding:10px 14px;font-size:9px}
+}
+
+/* --- Auth overlay --------------------------------------- */
+#authOverlay{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .4s}
+#authOverlay.hidden{opacity:0;pointer-events:none}
+
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;width:min(440px,92vw);position:relative;overflow:hidden}
+.auth-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,var(--cyan),var(--magenta));box-shadow:0 0 14px var(--cyan)}
+.auth-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--cyan),var(--magenta),transparent)}
+
+.auth-header{padding:28px 28px 20px 32px;border-bottom:1px solid var(--border)}
+.auth-logo{font-family:var(--display);font-size:20px;font-weight:900;letter-spacing:4px;color:var(--cyan);text-shadow:0 0 14px var(--cyan)}
+.auth-sub{font-family:var(--vt);font-size:15px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+
+.auth-tabs{display:flex;border-bottom:1px solid var(--border)}
+.auth-tab{flex:1;padding:12px;font-family:var(--display);font-size:10px;letter-spacing:2px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase}
+.auth-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,255,231,.03);text-shadow:0 0 8px var(--cyan)}
+.auth-tab:hover:not(.active){color:var(--text)}
+
+.auth-body{padding:28px 28px 28px 32px;display:flex;flex-direction:column;gap:16px}
+
+.auth-field{display:flex;flex-direction:column;gap:6px}
+.auth-label{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:var(--display)}
+.auth-input{background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:12px 16px;color:var(--cyan);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s;letter-spacing:1px;width:100%}
+.auth-input::placeholder{color:var(--muted)}
+.auth-input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,255,231,.1)}
+
+.auth-btn{background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:3px;padding:13px;font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;width:100%;position:relative;overflow:hidden;transition:all .2s;margin-top:4px}
+.auth-btn::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:scaleX(0);transform-origin:left;transition:transform .25s;z-index:0}
+.auth-btn:hover::before{transform:scaleX(1)}
+.auth-btn:hover{color:#000;box-shadow:0 0 20px rgba(0,255,231,.4)}
+.auth-btn span{position:relative;z-index:1}
+.auth-btn:disabled{opacity:.4}
+
+.auth-err{background:rgba(255,0,127,.08);border:1px solid rgba(255,0,127,.3);border-radius:3px;padding:10px 14px;font-size:11px;color:var(--magenta);letter-spacing:.5px;display:none}
+.auth-err.show{display:block}
+.auth-ok{background:rgba(0,255,65,.07);border:1px solid rgba(0,255,65,.25);border-radius:3px;padding:10px 14px;font-size:11px;color:var(--green);letter-spacing:.5px;display:none}
+.auth-ok.show{display:block}
+
+/* --- User badge in header ------------------------------- */
+.user-badge{display:flex;align-items:center;gap:10px;margin-top:6px}
+.user-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);flex-shrink:0}
+.user-name{font-family:var(--display);font-size:10px;letter-spacing:2px;color:var(--green)}
+.logout-btn{font-family:var(--display);font-size:9px;letter-spacing:1px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:2px;padding:3px 8px;transition:all .15s}
+.logout-btn:hover{color:var(--red);border-color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- Auth Overlay -->
+<div id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">// PHISHGUARD</div>
+      <div class="auth-sub">SECURE ACCESS PORTAL &nbsp;|&nbsp; AUTHENTICATE TO PROCEED</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">[ LOGIN ]</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">[ CREATE ACCOUNT ]</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="auth-body" id="authLogin">
+      <div class="auth-field">
+        <div class="auth-label">Username</div>
+        <input class="auth-input" id="loginUser" type="text" placeholder="agent_username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="auth-field">
+        <div class="auth-label">Password</div>
+        <input class="auth-input" id="loginPass" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="auth-err" id="loginErr"></div>
+      <button class="auth-btn" id="loginBtn" onclick="doLogin()"><span>&#9889; AUTHENTICATE</span></button>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div class="auth-body" id="authSignup" style="display:none">
+      <div class="auth-field">
+        <div class="auth-label">Username</div>
+        <input class="auth-input" id="signUser" type="text" placeholder="choose_callsign" autocomplete="username"/>
+      </div>
+      <div class="auth-field">
+        <div class="auth-label">Email</div>
+        <input class="auth-input" id="signEmail" type="email" placeholder="agent@domain.com" autocomplete="email"/>
+      </div>
+      <div class="auth-field">
+        <div class="auth-label">Password <span style="color:var(--muted);font-size:9px">(min 6 chars)</span></div>
+        <input class="auth-input" id="signPass" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password"/>
+      </div>
+      <div class="auth-err" id="signErr"></div>
+      <div class="auth-ok" id="signOk"></div>
+      <button class="auth-btn" id="signBtn" onclick="doSignup()"><span>&#9889; CREATE ACCOUNT</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Boot screen -->
+<div id="boot">
+  <div class="boot-line" style="animation-delay:.1s">PHISHGUARD OS v3.7.1 &mdash; INITIALIZING...</div>
+  <div class="boot-line" style="animation-delay:.4s">LOADING RANDOM FOREST CLASSIFIER MODULE... OK</div>
+  <div class="boot-line" style="animation-delay:.7s">CONNECTING TO THREAT DATABASE... OK</div>
+  <div class="boot-line" style="animation-delay:1.0s">LOADING FEATURE EXTRACTION ENGINE... OK</div>
+  <div class="boot-line" style="animation-delay:1.3s">SCANNING NETWORK INTERFACES... OK</div>
+  <div class="boot-line" style="animation-delay:1.6s">CALIBRATING ML DECISION BOUNDARIES... OK</div>
+  <div class="boot-line" style="animation-delay:1.9s;color:#ff007f">WARNING: ELEVATED PHISHING ACTIVITY DETECTED IN REGION</div>
+  <div class="boot-line" style="animation-delay:2.2s">LAUNCHING CYBER THREAT DETECTION INTERFACE...</div>
+  <div class="boot-line" style="animation-delay:2.5s;color:#ffe600">&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632;&#9632; 100%</div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="logo-title glitch glow-c" data-text="// PHISHGUARD">&nbsp;// PHISHGUARD</div>
+        <div class="logo-sub">CYBER THREAT DETECTION SYSTEM &nbsp;|&nbsp; <span>ML ENGINE ACTIVE</span></div>
+      </div>
+      <div class="header-right">
+        <div class="system-time" id="sysTime">SYS TIME: --:--:--</div>
+        <div class="threat-level">
+          <span style="font-size:10px;color:var(--muted);letter-spacing:1px">THREAT LVL</span>
+          <div class="threat-bar">
+            <div class="threat-seg on-g"></div>
+            <div class="threat-seg on-g"></div>
+            <div class="threat-seg on-y"></div>
+            <div class="threat-seg on-y"></div>
+            <div class="threat-seg"></div>
+          </div>
+          <span style="font-size:10px;color:var(--yellow);letter-spacing:1px">ELEVATED</span>
+        </div>
+        <div class="user-badge" id="userBadge" style="display:none">
+          <div class="user-dot"></div>
+          <span class="user-name" id="userNameDisplay">AGENT</span>
+          <button class="logout-btn" onclick="doLogout()">LOGOUT</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="stat-label">URLs Analysed</div>
+      <div class="stat-value glow-c" id="statTotal">0</div>
+      <div class="stat-delta">All time scans</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Threats Detected</div>
+      <div class="stat-value glow-m" id="statPhishing" style="color:var(--magenta)">0</div>
+      <div class="stat-delta">Confirmed phishing</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Safe URLs</div>
+      <div class="stat-value glow-g" id="statLegit" style="color:var(--green)">0</div>
+      <div class="stat-delta">Verified legit</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Phishing Rate</div>
+      <div class="stat-value glow-y" id="statRate" style="color:var(--yellow)">0%</div>
+      <div class="stat-delta">Of total scans</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this,'single')">[ SINGLE SCAN ]</button>
+    <button class="tab" onclick="switchTab(this,'batch')">[ BATCH SCAN ]</button>
+    <button class="tab" onclick="switchTab(this,'history')">[ SCAN LOG ]</button>
+    <button class="tab" onclick="switchTab(this,'threats')">[ THREAT FEED ]</button>
+  </div>
+
+  <!-- SINGLE SCAN -->
+  <div class="tab-panel active" id="panel-single">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">URL THREAT ANALYSER</div>
+        <div class="panel-tag">RANDOM FOREST // 200 ESTIMATORS</div>
+      </div>
+      <div class="panel-body">
+        <div class="url-row">
+          <input class="url-input" id="urlInput" type="text"
+            placeholder="https://target-url-to-analyse.com/path"
+            onkeydown="if(event.key==='Enter')scanUrl()"/>
+          <button class="scan-btn" id="scanBtn" onclick="scanUrl()">
+            <span>&#9889; EXECUTE SCAN</span>
+          </button>
+        </div>
+        <div class="scan-progress" id="scanProgress">
+          <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+          <div class="prog-label" id="progLabel">INITIALIZING<span class="loader-dot">_</span></div>
+        </div>
+
+        <div class="result-wrap" id="resultWrap">
+          <div class="verdict-bar">
+            <div class="verdict-box" id="verdictBox">
+              <div class="verdict-icon" id="verdictIcon"></div>
+              <div class="verdict-label" id="verdictLabel"></div>
+            </div>
+            <div class="result-meta">
+              <div class="meta-row">
+                <div class="meta-key">TARGET URL</div>
+                <div class="meta-val" id="metaUrl" style="color:var(--cyan);font-size:11px"></div>
+              </div>
+              <div class="meta-row">
+                <div class="meta-key">CLASSIFICATION</div>
+                <div class="meta-val" id="metaClass"></div>
+              </div>
+              <div class="meta-row" style="flex-direction:column;align-items:stretch">
+                <div class="conf-label-row">
+                  <span>MODEL CONFIDENCE</span>
+                  <span id="confVal"></span>
+                </div>
+                <div class="conf-track">
+                  <div class="conf-fill" id="confFill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="features-title">// FEATURE RISK BREAKDOWN</div>
+          <div class="risk-grid" id="riskGrid"></div>
+
+          <div class="features-title" style="margin-top:18px">// EXTRACTED FEATURE VECTOR</div>
+          <div class="features-grid" id="featuresGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BATCH SCAN -->
+  <div class="tab-panel" id="panel-batch">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">BATCH URL SCANNER</div>
+        <div class="panel-tag">MAX 20 URLS PER BATCH</div>
+      </div>
+      <div class="panel-body">
+        <textarea class="batch-area" id="batchInput"
+          placeholder="Paste URLs &mdash; one per line:&#10;https://example.com&#10;http://suspicious-site.net/login&#10;https://bank-secure-verify.xyz/account"></textarea>
+        <div class="btn-row">
+          <button class="scan-btn" onclick="runBatch()"><span>&#9889; SCAN ALL URLS</span></button>
+          <button class="sec-btn" onclick="document.getElementById('batchInput').value=''">CLEAR</button>
+        </div>
+        <div class="batch-results tbl-wrap" id="batchResults">
+          <table>
+            <thead><tr><th>#</th><th>URL</th><th>VERDICT</th><th>CONFIDENCE</th></tr></thead>
+            <tbody id="batchBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCAN LOG -->
+  <div class="tab-panel" id="panel-history">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:var(--display);font-size:11px;letter-spacing:2px;color:var(--cyan)">// SCAN HISTORY LOG</div>
+      <button class="sec-btn" onclick="loadHistory()">&#8635; REFRESH</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>URL</th><th>VERDICT</th><th>CONFIDENCE</th><th>TIMESTAMP</th><th></th></tr></thead>
+        <tbody id="historyBody">
+          <tr><td colspan="6"><div class="empty">LOADING LOG<span class="loader-dot">_</span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- THREAT FEED -->
+  <div class="tab-panel" id="panel-threats">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:var(--display);font-size:11px;letter-spacing:2px;color:var(--magenta)">// LIVE THREAT FEED</div>
+      <button class="sec-btn" onclick="loadThreatFeed()">&#8635; REFRESH</button>
+    </div>
+    <div class="feed-list" id="threatFeed">
+      <div class="empty">NO THREATS LOGGED YET</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null')
+  ? 'http://localhost:8000'
+  : window.location.origin;
+const FEAT_NAMES = ['URL Len','IP Addr','Has @','//Redir','Hyphen','Dot Cnt','HTTPS','Domain Age','Page Rank','Has #','Script Len','Digits','Shortener','iFrame'];
+
+// --- Auth State --------------------------------------------------------------
+let authToken = sessionStorage.getItem('pg_token') || null;
+let authUser  = JSON.parse(sessionStorage.getItem('pg_user') || 'null');
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` };
+}
+
+function setSession(token, user) {
+  authToken = token; authUser = user;
+  sessionStorage.setItem('pg_token', token);
+  sessionStorage.setItem('pg_user', JSON.stringify(user));
+  document.getElementById('userBadge').style.display = 'flex';
+  document.getElementById('userNameDisplay').textContent = user.username.toUpperCase();
+}
+
+function clearSession() {
+  authToken = null; authUser = null;
+  sessionStorage.removeItem('pg_token');
+  sessionStorage.removeItem('pg_user');
+  document.getElementById('userBadge').style.display = 'none';
+}
+
+function showAuthOverlay() {
+  const overlay = document.getElementById('authOverlay');
+  if (overlay) { overlay.classList.remove('hidden'); }
+  else { location.reload(); }
+}
+
+// --- Auth Tab Switch ---------------------------------------------------------
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('authLogin').style.display  = tab === 'login'  ? 'flex' : 'none';
+  document.getElementById('authSignup').style.display = tab === 'signup' ? 'flex' : 'none';
+}
+
+// --- Login -------------------------------------------------------------------
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl    = document.getElementById('loginErr');
+  const btn      = document.getElementById('loginBtn');
+  errEl.classList.remove('show');
+  if (!username || !password) { errEl.textContent = 'ALL FIELDS REQUIRED'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.querySelector('span').textContent = 'AUTHENTICATING_';
+  try {
+    const res  = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = (data.detail||'LOGIN FAILED').toUpperCase(); errEl.classList.add('show'); return; }
+    setSession(data.token, data.user);
+    document.getElementById('authOverlay').classList.add('hidden');
+    setTimeout(() => document.getElementById('authOverlay').remove(), 500);
+    bootSequence();
+  } catch(e) { errEl.textContent = 'BACKEND OFFLINE &mdash; START SERVER'; errEl.classList.add('show'); }
+  finally { btn.disabled = false; btn.querySelector('span').textContent = '&#9889; AUTHENTICATE'; }
+}
+
+// --- Signup ------------------------------------------------------------------
+async function doSignup() {
+  const username = document.getElementById('signUser').value.trim();
+  const email    = document.getElementById('signEmail').value.trim();
+  const password = document.getElementById('signPass').value;
+  const errEl    = document.getElementById('signErr');
+  const okEl     = document.getElementById('signOk');
+  const btn      = document.getElementById('signBtn');
+  errEl.classList.remove('show'); okEl.classList.remove('show');
+  if (!username||!email||!password) { errEl.textContent='ALL FIELDS REQUIRED'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.querySelector('span').textContent = 'REGISTERING_';
+  try {
+    const res  = await fetch(`${API}/api/auth/signup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,email,password}) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = (data.detail||'SIGNUP FAILED').toUpperCase(); errEl.classList.add('show'); return; }
+    okEl.textContent = `ACCOUNT CREATED &mdash; WELCOME, ${username.toUpperCase()}`;
+    okEl.classList.add('show');
+    setSession(data.token, data.user);
+    setTimeout(() => {
+      document.getElementById('authOverlay').classList.add('hidden');
+      setTimeout(() => document.getElementById('authOverlay').remove(), 500);
+      bootSequence();
+    }, 1000);
+  } catch(e) { errEl.textContent = 'BACKEND OFFLINE &mdash; START SERVER'; errEl.classList.add('show'); }
+  finally { btn.disabled = false; btn.querySelector('span').textContent = '&#9889; CREATE ACCOUNT'; }
+}
+
+// --- Logout ------------------------------------------------------------------
+async function doLogout() {
+  try { await fetch(`${API}/api/auth/logout`, { method:'POST', headers: authHeaders() }); } catch(e){}
+  clearSession();
+  location.reload();
+}
+
+// --- Check existing session on load -----------------------------------------
+window.addEventListener('DOMContentLoaded', () => {
+  if (authToken && authUser) {
+    // Verify token is still valid
+    fetch(`${API}/api/auth/me`, { headers: authHeaders() })
+      .then(r => {
+        if (r.ok) {
+          document.getElementById('authOverlay').classList.add('hidden');
+          setTimeout(() => document.getElementById('authOverlay').remove(), 400);
+          document.getElementById('userBadge').style.display = 'flex';
+          document.getElementById('userNameDisplay').textContent = authUser.username.toUpperCase();
+          bootSequence();
+        } else {
+          clearSession();
+          showAuthOverlay();
+        }
+      }).catch(() => { clearSession(); showAuthOverlay(); });
+  }
+});
+
+// --- Boot sequence (only runs after auth) -----------------------------------
+function bootSequence() {
+  setTimeout(() => {
+    document.getElementById('boot').classList.add('hidden');
+    setTimeout(() => document.getElementById('boot').remove(), 600);
+    loadStats(); loadHistory(); loadThreatFeed();
+  }, 3100);
+}
+
+/* clock */
+setInterval(() => {
+  const t = new Date(), p = n => String(n).padStart(2,'0');
+  document.getElementById('sysTime').textContent =
+    `SYS TIME: ${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())}`;
+}, 1000);
+
+/* tabs */
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+/* single scan */
+async function scanUrl() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { showToast('INPUT URL REQUIRED'); return; }
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  document.getElementById('resultWrap').classList.remove('show');
+  const prog = document.getElementById('scanProgress');
+  const fill = document.getElementById('progFill');
+  const lbl  = document.getElementById('progLabel');
+  prog.classList.add('show');
+  const steps = [[15,'PARSING URL STRUCTURE'],[30,'EXTRACTING FEATURES'],[55,'RUNNING CLASSIFIER'],[75,'COMPUTING PROBABILITIES'],[90,'CHECKING THREAT DB'],[100,'ANALYSIS COMPLETE']];
+  let i = 0;
+  const tick = setInterval(() => {
+    if (i < steps.length) {
+      fill.style.width = steps[i][0] + '%';
+      lbl.innerHTML = steps[i][1] + '<span class="loader-dot">_</span>';
+      i++;
+    }
+  }, 200);
+  try {
+    const res  = await fetch(`${API}/api/predict`, { method:'POST', headers: authHeaders(), body:JSON.stringify({url}) });
+    const data = await res.json();
+    clearInterval(tick); fill.style.width='100%'; lbl.innerHTML='ANALYSIS COMPLETE';
+    if (!res.ok) {
+      if (res.status === 401) { showToast('SESSION EXPIRED - PLEASE LOG IN AGAIN'); clearSession(); showAuthOverlay(); return; }
+      showToast('ERROR: ' + (data.detail || 'Scan failed')); return;
+    }
+    setTimeout(() => { prog.classList.remove('show'); fill.style.width='0%'; renderResult(data); loadStats(); loadHistory(); if(data.is_phishing) loadThreatFeed(); }, 400);
+  } catch(e) {
+    clearInterval(tick); prog.classList.remove('show');
+    showToast('NETWORK ERROR &mdash; Check server is running at: ' + API);
+  } finally { btn.disabled = false; }
+}
+
+function renderResult(d) {
+  const cls = d.is_phishing ? 'phishing' : 'legit';
+  document.getElementById('verdictBox').className = 'verdict-box ' + cls;
+  document.getElementById('verdictIcon').textContent = d.is_phishing ? '&#9888;' : '&#10003;';
+  const vl = document.getElementById('verdictLabel');
+  vl.textContent = d.is_phishing ? 'PHISHING' : 'SAFE';
+  vl.style.color = d.is_phishing ? 'var(--magenta)' : 'var(--green)';
+  document.getElementById('metaUrl').textContent   = d.url;
+  document.getElementById('metaClass').textContent = d.prediction.toUpperCase();
+  document.getElementById('metaClass').style.color = d.is_phishing ? 'var(--magenta)' : 'var(--green)';
+  document.getElementById('confVal').textContent   = d.confidence + '%';
+  const cf = document.getElementById('confFill');
+  cf.className = 'conf-fill ' + cls;
+  setTimeout(() => cf.style.width = d.confidence + '%', 50);
+
+  const risks = [
+    { name:'URL Length',      val:Math.min(d.features[0]/200*100,100) },
+    { name:'IP in URL',       val:d.features[1]*100 },
+    { name:'@ Symbol',        val:d.features[2]*100 },
+    { name:'Redirect //',     val:d.features[3]*100 },
+    { name:'Hyphen in host',  val:d.features[4]*100 },
+    { name:'Subdomain depth', val:Math.min(d.features[5]/4*100,100) },
+    { name:'URL Shortener',   val:d.features[12]*100 },
+  ];
+  document.getElementById('riskGrid').innerHTML = risks.map(r =>
+    `<div class="risk-row">
+      <div class="risk-name">${r.name}</div>
+      <div class="risk-track"><div class="risk-fill" style="width:${r.val}%"></div></div>
+      <div class="risk-score">${Math.round(r.val)}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('featuresGrid').innerHTML = d.features.map((v,i) =>
+    `<div class="feat-chip">
+      <div class="feat-name">${FEAT_NAMES[i]}</div>
+      <div class="feat-val ${v>0&&[1,2,3,4,12,13].includes(i)?'alert':''}">${v}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('resultWrap').classList.add('show');
+}
+
+/* batch */
+async function runBatch() {
+  const raw = document.getElementById('batchInput').value.trim();
+  if (!raw) { showToast('PASTE URLS FIRST'); return; }
+  const urls = [...new Set(raw.split('\n').map(u=>u.trim()).filter(Boolean))].slice(0,20);
+  const body = document.getElementById('batchBody');
+  const wrap = document.getElementById('batchResults');
+  body.innerHTML = ''; wrap.classList.add('show');
+  for (let i=0; i<urls.length; i++) {
+    let url = urls[i];
+    if (!url.startsWith('http')) url = 'https://' + url;
+    body.innerHTML += `<tr id="br-${i}"><td>${i+1}</td><td class="td-url">${url}</td><td><span class="loader-dot">SCANNING_</span></td><td>&mdash;</td></tr>`;
+    try {
+      const res  = await fetch(`${API}/api/predict`,{method:'POST',headers:authHeaders(),body:JSON.stringify({url})});
+      const data = await res.json();
+      const row  = document.getElementById(`br-${i}`);
+      row.cells[2].innerHTML = `<span class="badge ${data.prediction.toLowerCase()}">${data.prediction.toUpperCase()}</span>`;
+      row.cells[3].textContent = data.confidence + '%';
+    } catch(e) { document.getElementById(`br-${i}`).cells[2].textContent='ERROR'; }
+  }
+  loadStats(); loadHistory(); loadThreatFeed();
+  showToast(`BATCH COMPLETE &mdash; ${urls.length} URLS PROCESSED`);
+}
+
+/* history */
+async function loadHistory() {
+  try {
+    const rows = await (await fetch(`${API}/api/history?limit=20`, {headers: authHeaders()})).json();
+    const body = document.getElementById('historyBody');
+    if (!rows.length) { body.innerHTML='<tr><td colspan="6"><div class="empty">NO RECORDS FOUND</div></td></tr>'; return; }
+    body.innerHTML = rows.map(r=>`
+      <tr>
+        <td>${r.id}</td>
+        <td class="td-url" title="${r.url}">${r.url}</td>
+        <td><span class="badge ${r.prediction.toLowerCase()}">${r.prediction.toUpperCase()}</span></td>
+        <td>${r.confidence}%</td>
+        <td style="font-size:10px">${new Date(r.created_at).toLocaleString()}</td>
+        <td><button class="del-btn" onclick="delRecord(${r.id})">&#10005;</button></td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('historyBody').innerHTML='<tr><td colspan="6"><div class="empty">BACKEND OFFLINE</div></td></tr>';
+  }
+}
+async function delRecord(id) {
+  await fetch(`${API}/api/history/${id}`,{method:'DELETE', headers: authHeaders()});
+  loadHistory(); loadStats(); showToast('RECORD PURGED');
+}
+
+/* stats */
+async function loadStats() {
+  try {
+    const d = await (await fetch(`${API}/api/stats`, {headers: authHeaders()})).json();
+    animCount('statTotal',    d.total_scanned);
+    animCount('statPhishing', d.phishing_detected);
+    animCount('statLegit',    d.legit_detected);
+    document.getElementById('statRate').textContent = d.phishing_rate + '%';
+  } catch(e) {}
+}
+function animCount(id, target) {
+  const el=document.getElementById(id), cur=parseInt(el.textContent)||0, step=Math.max(1,Math.ceil((target-cur)/15));
+  if(cur===target) return;
+  let v=cur;
+  const t=setInterval(()=>{ v=Math.min(v+step,target); el.textContent=v; if(v>=target)clearInterval(t); },40);
+}
+
+/* threat feed */
+async function loadThreatFeed() {
+  try {
+    const rows = await (await fetch(`${API}/api/history?limit=10`, {headers: authHeaders()})).json();
+    const feed = document.getElementById('threatFeed');
+    const threats = rows.filter(r=>r.prediction==='Phishing');
+    if(!threats.length) { feed.innerHTML='<div class="empty">NO THREATS DETECTED YET</div>'; return; }
+    feed.innerHTML = threats.map(r=>`
+      <div class="feed-item">
+        <div class="feed-icon">&#9888;</div>
+        <div class="feed-url">${r.url}</div>
+        <div style="font-family:var(--display);font-size:10px;color:var(--magenta);margin-right:8px">${r.confidence}%</div>
+        <div class="feed-time">${new Date(r.created_at).toLocaleTimeString()}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+/* toast */
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent='// '+msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
